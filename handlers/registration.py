@@ -1,14 +1,11 @@
-import sqlite3
 from aiogram import Router, types
-from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
-from config import bot, ADMIN_ID, MEDIA_PATH
+from config import bot
 from database import sql_queries
 from database.a_db import AsyncDatabase
 from consts import profile_text
-from keyboards.start import start_menu_keyboard
 router = Router()
 
 
@@ -21,6 +18,15 @@ class RegistrationStates(StatesGroup):
 
 
 @router.callback_query(lambda call: call.data == 'registration')
+async def registration_start(call: types.CallbackQuery, state: FSMContext):
+    await bot.send_message(
+        chat_id=call.from_user.id,
+        text='1. Send your Nickname !'
+    )
+    await state.set_state(RegistrationStates.nickname)
+
+
+@router.callback_query(lambda call: call.data == 'edit_profile')
 async def registration_start(call: types.CallbackQuery, state: FSMContext):
     await bot.send_message(
         chat_id=call.from_user.id,
@@ -92,7 +98,29 @@ async def process_photo(message: types.Message, state: FSMContext, db=AsyncDatab
     )
     data = await state.get_data()
     photo = FSInputFile('media/' + file_path)
-    try:
+    profile = await db.execute_query(
+        query=sql_queries.SELECT_ONE_PROFILE_QUERY,
+        params=(message.from_user.id,),
+        fetch='one'
+    )
+    if profile:
+        await db.execute_query(
+            query=sql_queries.UPDATE_PROFILE_QUERY,
+            params=(
+                data['nickname'],
+                data['bio'],
+                data['is_married'],
+                data['male'],
+                'media/' + file_path,
+                message.from_user.id
+            ),
+            fetch='none'
+        )
+        await bot.send_message(
+            chat_id=message.from_user.id,
+            text='You have successfully re-registered!!!'
+        )
+    else:
         await db.execute_query(
             query=sql_queries.INSERT_PROFILE_QUERY,
             params=(
@@ -102,16 +130,14 @@ async def process_photo(message: types.Message, state: FSMContext, db=AsyncDatab
                 data['bio'],
                 data['is_married'],
                 data['male'],
-                'media/' + file_path
+                'media/' + file_path,
             ),
             fetch='none'
         )
-    except sqlite3.IntegrityError:
         await bot.send_message(
             chat_id=message.from_user.id,
-            text='You have registered before'
+            text='You have successfully registered!!!'
         )
-        return
 
     await bot.send_photo(
         chat_id=message.from_user.id,
@@ -122,8 +148,4 @@ async def process_photo(message: types.Message, state: FSMContext, db=AsyncDatab
             is_married=data['is_married'],
             male=data['male']
         )
-    )
-    await bot.send_message(
-        chat_id=message.from_user.id,
-        text='You have successfully registered!!!'
     )

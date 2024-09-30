@@ -52,4 +52,3 @@ async def admin_panel(message: types.Message, db=AsyncDatabase()):
             chat_id=message.from_user.id,
             text="You are not a Admin ("
         )
-
