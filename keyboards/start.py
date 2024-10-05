@@ -17,11 +17,16 @@ async def start_menu_keyboard():
         text='My Profile ☠️',
         callback_data='my_profile'
     )
+    reference_menu_button = InlineKeyboardButton(
+        text='Reference Menu 🤪️',
+        callback_data='reference_menu'
+    )
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [reqistration_button],
             [view_profiles_button],
             [my_profile_button],
+            [reference_menu_button],
         ]
     )
     return markup
