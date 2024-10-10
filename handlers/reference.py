@@ -1,15 +1,10 @@
 import binascii
 import os
 from aiogram import Router, types
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.context import FSMContext
-from aiogram.types import FSInputFile
 from aiogram.utils.deep_linking import create_start_link
 from config import bot
 from database import sql_queries
-from consts import profile_text
 from database.a_db import AsyncDatabase
-from keyboards.my_profile import my_profile_keyboard
 from keyboards.reference import reference_menu_keyboard
 router = Router()
 
@@ -63,9 +58,10 @@ async def my_balance(call: types.CallbackQuery, db=AsyncDatabase()):
         ),
         fetch='one'
     )
+    balance = user.get("BALANCE", 0)
     await bot.send_message(
         chat_id=call.from_user.id,
-        text=f"Here is your Balance: {user['BALANCE']}"
+        text=f"Here is your Balance: {balance}"
     )
 
 
